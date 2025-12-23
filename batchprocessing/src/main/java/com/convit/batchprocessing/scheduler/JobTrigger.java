@@ -29,7 +29,7 @@ public class JobTrigger {
         jobParameters.addDate("uniqueness", new Date());
         JobExecution jobExecution = this.jobLauncher.run(job, jobParameters.toJobParameters());
 
-        log.info("job finished with the status: {}", jobExecution.getExitStatus());
+        log.info("===============> job finished with the status: {}", jobExecution.getExitStatus());
     }
 
 }
