@@ -2,6 +2,7 @@ package com.convit.batchprocessing.config;
 
 import com.convit.batchprocessing.dto.VehicleDTO;
 import com.convit.batchprocessing.listener.CustomJobExecutionListener;
+import com.convit.batchprocessing.reader.MultiResourceReaderThreadSafe;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
+import org.springframework.core.task.VirtualThreadTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Slf4j
@@ -43,15 +45,22 @@ public class ImportVehicleInvoicesJobConfig {
     public Step importVehicleStep(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
         return new StepBuilder("importVehicleStep", jobRepository)
                 .<VehicleDTO, VehicleDTO>chunk(100, transactionManager)
-                .reader(multiResourceItemReader())
+                .reader(multiResourceReaderThreadSafe())
                 .processor(ImportVehicleInvoicesJobConfig::vehicleProcessor)
                 .writer(items -> log.info("writing item: {}", items))
+                .taskExecutor(taskExecutor())
                 .build();
     }
 
     private static VehicleDTO vehicleProcessor(VehicleDTO item) {
         log.info("Processing the item: {}", item);
         return item;
+    }
+
+    public MultiResourceReaderThreadSafe<VehicleDTO> multiResourceReaderThreadSafe() {
+        var multiResourceReader = new MultiResourceReaderThreadSafe<>(multiResourceItemReader());
+        multiResourceReader.setResources(resources);
+        return multiResourceReader;
     }
 
     @Bean
@@ -78,4 +87,7 @@ public class ImportVehicleInvoicesJobConfig {
                 .build();
     }
 
+    public VirtualThreadTaskExecutor taskExecutor() {
+        return new VirtualThreadTaskExecutor("Custom-Thread-");
+    }
 }
