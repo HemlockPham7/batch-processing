@@ -25,7 +25,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-public class ImportVehicleInvoicesJobConfig {
+public class ImportVehicleInvoicesFlatFileJobConfig {
 
     @Value("${input.folder.vehicles}")
     private Resource[] resources;
@@ -46,7 +46,7 @@ public class ImportVehicleInvoicesJobConfig {
         return new StepBuilder("importVehicleStep", jobRepository)
                 .<VehicleDTO, VehicleDTO>chunk(100, transactionManager)
                 .reader(multiResourceReaderThreadSafe())
-                .processor(ImportVehicleInvoicesJobConfig::vehicleProcessor)
+                .processor(ImportVehicleInvoicesFlatFileJobConfig::vehicleProcessor)
                 .writer(items -> log.info("writing item: {}", items))
                 .taskExecutor(taskExecutor())
                 .build();
