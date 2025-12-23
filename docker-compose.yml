@@ -6,7 +6,7 @@ services:
     container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: testdb
+      MYSQL_DATABASE: vehicleDB
       MYSQL_USER: username
       MYSQL_PASSWORD: password
     ports:
