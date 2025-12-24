@@ -21,7 +21,7 @@ public class JobTrigger {
 
     public JobTrigger(
             JobLauncher jobLauncher,
-            @Qualifier("importVehicleJsonJob") Job job
+            @Qualifier("importVehiclePdfJob") Job job
     ) {
         this.jobLauncher = jobLauncher;
         this.job = job;
