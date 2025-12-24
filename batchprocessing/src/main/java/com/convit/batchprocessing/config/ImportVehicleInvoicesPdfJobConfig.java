@@ -1,6 +1,5 @@
 package com.convit.batchprocessing.config;
 
-import com.convit.batchprocessing.dto.VehicleForJsonDTO;
 import com.convit.batchprocessing.dto.VehiclePdfDTO;
 import com.convit.batchprocessing.listener.CustomJobExecutionListener;
 import com.convit.batchprocessing.processor.InvoicePdfItemProcessor;
@@ -12,14 +11,7 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.file.MultiResourceItemReader;
-import org.springframework.batch.item.file.ResourceAwareItemReaderItemStream;
 import org.springframework.batch.item.file.ResourcesItemReader;
-import org.springframework.batch.item.file.builder.MultiResourceItemReaderBuilder;
-import org.springframework.batch.item.json.JacksonJsonObjectReader;
-import org.springframework.batch.item.json.builder.JsonItemReaderBuilder;
-import org.springframework.batch.item.support.SynchronizedItemStreamReader;
-import org.springframework.batch.item.support.builder.SynchronizedItemStreamReaderBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -54,7 +46,7 @@ public class ImportVehicleInvoicesPdfJobConfig {
                 .reader(resourcesItemReader())
                 .processor(invoicePdfItemProcessor)
                 .writer(items -> log.info("writing item: {}", items))
-//                .taskExecutor(taskExecutor())
+                .taskExecutor(taskExecutor())
                 .build();
     }
 
