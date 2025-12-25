@@ -3,6 +3,7 @@ package com.convit.batchprocessing.config;
 import com.convit.batchprocessing.dto.SalesDTO;
 import com.convit.batchprocessing.listener.SalesWriterListener;
 import com.convit.batchprocessing.processor.SalesProcessor;
+import com.convit.batchprocessing.task.UploadFileToS3BucketTasklet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -12,6 +13,7 @@ import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.core.step.builder.TaskletStepBuilder;
 import org.springframework.batch.item.database.JdbcCursorItemReader;
 import org.springframework.batch.item.database.JdbcPagingItemReader;
 import org.springframework.batch.item.database.Order;
@@ -44,12 +46,14 @@ public class ExportSalesJobConfig {
     private final JobRepository repository;
     private final PlatformTransactionManager transactionManager;
     private final SalesWriterListener salesWriterListener;
+    private final UploadFileToS3BucketTasklet uploadFileToS3BucketTasklet;
 
     @Bean
     public Job dbToFileJob(Step fromSalesTableToFile) {
         return new JobBuilder("dbToFileJob", repository)
                 .incrementer(new RunIdIncrementer())
                 .start(fromSalesTableToFile)
+                .next(uploadFileToS3())
                 .build();
     }
 
@@ -115,6 +119,13 @@ public class ExportSalesJobConfig {
                 .names("productId", "customerId", "saleDate", "saleAmount", "storeLocation", "country")
                 .shouldDeleteIfEmpty(Boolean.FALSE)
                 .append(Boolean.TRUE)
+                .build();
+    }
+
+    @Bean
+    public Step uploadFileToS3() {
+        return new TaskletStepBuilder(new StepBuilder("uploadFileToS3", repository))
+                .tasklet(uploadFileToS3BucketTasklet, transactionManager)
                 .build();
     }
 }
