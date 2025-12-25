@@ -12,8 +12,6 @@ import software.amazon.awssdk.transfer.s3.model.CompletedFileUpload;
 import software.amazon.awssdk.transfer.s3.model.FileUpload;
 import software.amazon.awssdk.transfer.s3.model.UploadFileRequest;
 
-import java.nio.file.Paths;
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -32,7 +30,7 @@ public class StoreFileToObjectStorageServiceImpl implements StoreFileToObjectSto
         UploadFileRequest uploadFileRequest = UploadFileRequest.builder()
                 .putObjectRequest(builder -> builder.bucket(bucket)
                         .key(objectDTO.name()))
-                .source(Paths.get(objectDTO.name()))
+                .source(objectDTO.path())
                 .build();
 
         FileUpload fileUpload = s3TransferManager.uploadFile(uploadFileRequest);
