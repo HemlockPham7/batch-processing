@@ -12,6 +12,7 @@ import java.util.List;
 public class CsvFileNameItemReader implements ItemReader<String> {
 
     private final Iterator<String> fileIterator;
+    private final Object lock = new Object();
 
     public CsvFileNameItemReader(@Value("${input.folder.vehicles}") Resource[] resources) {
         List<String> files = List.of(resources).stream()
@@ -29,6 +30,8 @@ public class CsvFileNameItemReader implements ItemReader<String> {
 
     @Override
     public String read() {
-        return fileIterator.hasNext() ? fileIterator.next() : null;
+        synchronized (lock) {
+            return fileIterator.hasNext() ? fileIterator.next() : null;
+        }
     }
 }

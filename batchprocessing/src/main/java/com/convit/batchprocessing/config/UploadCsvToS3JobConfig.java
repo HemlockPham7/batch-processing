@@ -13,6 +13,7 @@ import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.VirtualThreadTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @EnableBatchProcessing
@@ -41,6 +42,11 @@ public class UploadCsvToS3JobConfig {
                 .reader(reader)
                 .processor(processor)
                 .writer(writer)
+                .taskExecutor(taskExecutor())
                 .build();
+    }
+
+    public VirtualThreadTaskExecutor taskExecutor() {
+        return new VirtualThreadTaskExecutor("Custom-Thread-");
     }
 }
