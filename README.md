@@ -1,78 +1,47 @@
-# batch-processing
+# batch-multithread-upload
 
-## Java Send Mail
-
-```
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-mail</artifactId>
-    </dependency>
-```
-
-## Docker set up for mail hog
-
-```
-services:
-  mailhog:
-    image: mailhog/mailhog
-    container_name: mailhog-container
-    restart: unless-stopped
-    ports:
-      - "1025:1025" # SMTP server port
-      - "8025:8025" # Web interface port
-
-```
-
-## Communication betwen step in batch job
-
-**Step 1**: write data into StepExecutionContext
-
-```java
-stepExecution.getExecutionContext().put("totalCount", 100);
-```
-
-**Promotion Listener**
+## Concurrency limits for virtual threads
 
 ```java
 @Bean
-public ExecutionContextPromotionListener promotionListener() {
-    ExecutionContextPromotionListener listener =
-            new ExecutionContextPromotionListener();
-    listener.setKeys(new String[]{"totalCount"});
-    return listener;
+public TaskExecutor batchTaskExecutor() {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+
+    executor.setCorePoolSize(40);      // số chunk chạy song song
+    executor.setMaxPoolSize(40);       // hard limit
+    executor.setQueueCapacity(0);      // không queue, submit là chạy
+    executor.setThreadNamePrefix("vt-batch-");
+
+    // QUAN TRỌNG: bật virtual thread
+    executor.setTaskDecorator(runnable ->
+            Thread.ofVirtual().name("vt-batch-", 0).unstarted(runnable)
+    );
+
+    executor.initialize();
+    return executor;
 }
 
 ```
 
-**Attach listener into Step 1**
+**Update UploadCsvToS3JobConfig**
 
 ```java
 @Bean
-public Step step1() {
-    return stepBuilderFactory.get("step1")
-            .tasklet(tasklet1())
-            .listener(promotionListener())
+public Step uploadCsvStep() {
+    return new StepBuilder("uploadCsvStep", jobRepository)
+            .<String, String>chunk(100, transactionManager)
+            .reader(reader)          // thread-safe
+            .processor(processor)    // stateless
+            .writer(writer)          // thread-safe
+            .taskExecutor(batchTaskExecutor())
+            .throttleLimit(40)       // RẤT QUAN TRỌNG
             .build();
 }
-
 ```
 
 
-➡️ After step 1 is done, key totalCount will be promoted in JobExecutionContext
+**Why throttleLimit is needed?**
 
-**Step 2**: Read data
-
-```java
-@Value("#{jobExecutionContext['totalCount']}")
-private Integer totalCount;
-
-```
-
-Or:
-
-```java
-stepExecution.getJobExecution()
-    .getExecutionContext()
-    .get("totalCount");
-
-```
+- Spring Batch doesn't always trust the executor.
+- throttleLimit = limit on the number of parallel chunks.
+- Therefore, = maxPoolSize

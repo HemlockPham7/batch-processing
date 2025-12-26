@@ -38,7 +38,7 @@ public class UploadCsvToS3JobConfig {
     @Bean
     public Step uploadCsvStep() {
         return new StepBuilder("uploadCsvStep", jobRepository)
-                .<String, String>chunk(4, transactionManager)
+                .<String, String>chunk(100, transactionManager)
                 .reader(reader)
                 .processor(processor)
                 .writer(writer)
