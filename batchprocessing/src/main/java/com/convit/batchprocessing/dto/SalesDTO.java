@@ -1,14 +1,13 @@
 package com.convit.batchprocessing.dto;
 
-import java.time.LocalDate;
-
 public record SalesDTO(Long saleId,
                        Long productId,
                        Long customerId,
-                       LocalDate saleDate,
+                       String saleDate,
                        Double saleAmount,
-                       String storeLocation,
-                       String country) {
+                       String location,
+                       String country,
+                       Boolean processed) {
 
 
 }
