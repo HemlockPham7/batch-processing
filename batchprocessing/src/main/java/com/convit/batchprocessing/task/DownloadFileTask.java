@@ -1,5 +1,7 @@
 package com.convit.batchprocessing.task;
 
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Timer;
 import com.convit.batchprocessing.service.CustomS3Client;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,10 @@ public class DownloadFileTask implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
 
+        Timer.Sample sample = Timer.start(Metrics.globalRegistry);
+
+        Thread.sleep(5000L);
+
         Optional<Path> optionalDownloadedFilePath = customS3Client.download(bucketName);
 
         optionalDownloadedFilePath.ifPresent(filePath ->
@@ -34,6 +40,12 @@ public class DownloadFileTask implements Tasklet {
                         .getJobExecution()
                         .getExecutionContext()
                         .put("input.file.path", filePath.toAbsolutePath().toString()));
+
+        sample.stop(Timer.builder("spring_batch_step_download_file_custom_metrics")
+                .description("Custom Metrics for Download File")
+                .tag("bucket", bucketName)
+                .tag("status",contribution.getExitStatus().getExitCode())
+                .register(Metrics.globalRegistry));
 
         return RepeatStatus.FINISHED;
     }
